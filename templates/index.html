@@ -1,0 +1,301 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f4f5f0">
+  <title>Frame / Extract</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f4f5f0;
+      --ink: #17221d;
+      --muted: #65716a;
+      --line: #d8ddd5;
+      --green: #176b4a;
+      --green-dark: #10543a;
+      --coral: #e06d51;
+      --panel: #fff;
+      --mono: "DM Mono", monospace;
+      --sans: "Manrope", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background-color: var(--paper);
+      background-image: radial-gradient(#ccd4ca 0.7px, transparent 0.7px);
+      background-size: 18px 18px;
+      font-family: var(--sans);
+    }
+    .topbar {
+      height: 68px;
+      padding: 0 6vw;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--line);
+      background: rgba(244, 245, 240, .92);
+    }
+    .brand { display: flex; align-items: center; gap: 11px; font-size: 14px; font-weight: 800; letter-spacing: .02em; }
+    .brand-mark { width: 25px; height: 25px; background: var(--green); position: relative; border-radius: 6px 6px 6px 2px; }
+    .brand-mark::before { content: ""; position: absolute; width: 0; height: 0; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 7px solid white; top: 7px; left: 10px; }
+    .local-tag { font: 10px var(--mono); color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    main { width: min(1040px, 88vw); margin: 55px auto 70px; }
+    .intro { max-width: 660px; animation: arrive .5s ease-out both; }
+    .eyebrow { font: 11px var(--mono); letter-spacing: .12em; color: var(--green); text-transform: uppercase; margin-bottom: 14px; }
+    h1 { margin: 0; max-width: 600px; font-size: clamp(36px, 5vw, 58px); line-height: 1.04; letter-spacing: -.045em; font-weight: 700; }
+    .intro p { margin: 18px 0 34px; color: var(--muted); font-size: 15px; line-height: 1.7; max-width: 540px; }
+    .workspace { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(265px, .8fr); gap: 32px; align-items: start; }
+    .form-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 26px; box-shadow: 0 12px 34px rgba(23, 34, 29, .045); animation: arrive .55s .08s ease-out both; }
+    .field-label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 9px; }
+    .url-row { display: flex; gap: 8px; }
+    input, select { font: 13px var(--sans); color: var(--ink); }
+    input[type=url] { width: 100%; min-width: 0; height: 46px; border: 1px solid var(--line); border-radius: 5px; padding: 0 13px; background: #fbfcfa; outline: none; }
+    input[type=url]:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(23, 107, 74, .1); }
+    button { font: 700 12px var(--sans); cursor: pointer; }
+    .inspect { flex: 0 0 auto; height: 46px; padding: 0 16px; color: white; background: var(--green); border: 0; border-radius: 5px; }
+    .inspect:hover, .download:hover { background: var(--green-dark); }
+    .section-rule { height: 1px; background: var(--line); margin: 23px 0; }
+    .settings { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+    select { width: 100%; height: 42px; border: 1px solid var(--line); border-radius: 5px; padding: 0 10px; background: #fbfcfa; }
+    .download { width: 100%; height: 46px; margin-top: 23px; display: flex; justify-content: center; align-items: center; gap: 9px; background: var(--green); color: white; border: 0; border-radius: 5px; }
+    .download:disabled, .inspect:disabled { opacity: .55; cursor: wait; }
+    .download svg { width: 16px; height: 16px; }
+    .notice { font-size: 11px; line-height: 1.6; color: var(--muted); margin: 13px 0 0; }
+    .quality-meta { min-height: 16px; margin-top: 8px; color: var(--muted); font: 10px var(--mono); }
+    .preview { display: none; gap: 13px; align-items: center; margin-top: 19px; padding-top: 18px; border-top: 1px solid var(--line); }
+    .preview.visible { display: flex; }
+    .preview img { width: 112px; height: 63px; object-fit: cover; border-radius: 4px; background: #e7ebe5; }
+    .preview-title { font-size: 12px; line-height: 1.5; font-weight: 700; }
+    .preview-meta { margin-top: 5px; font: 10px var(--mono); color: var(--muted); }
+    .side { padding-top: 4px; animation: arrive .6s .16s ease-out both; }
+    .side-title { font: 11px var(--mono); color: var(--muted); text-transform: uppercase; letter-spacing: .1em; padding-bottom: 14px; border-bottom: 1px solid var(--line); }
+    .format { display: grid; grid-template-columns: 38px 1fr; gap: 12px; padding: 17px 0; border-bottom: 1px solid var(--line); }
+    .format-icon { width: 34px; height: 34px; display: grid; place-items: center; border: 1px solid var(--line); background: rgba(255,255,255,.65); border-radius: 6px; color: var(--green); font: 11px var(--mono); }
+    .format strong { display: block; font-size: 12px; margin: 1px 0 4px; }
+    .format span { display: block; font-size: 11px; line-height: 1.5; color: var(--muted); }
+    .status { display: none; margin-top: 18px; padding: 15px; border: 1px solid var(--line); background: rgba(255,255,255,.75); border-radius: 6px; }
+    .status.visible { display: block; }
+    .status-line { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 700; }
+    .status-detail { margin-top: 7px; color: var(--muted); font-size: 11px; line-height: 1.5; overflow-wrap: anywhere; }
+    .progress { height: 4px; background: #e8ece6; border-radius: 4px; margin-top: 12px; overflow: hidden; }
+    .progress > span { display: block; height: 100%; width: 0; background: var(--coral); transition: width .3s ease; }
+    .status a { display: inline-block; margin-top: 10px; color: var(--green); font-size: 11px; font-weight: 800; }
+    .error { color: #a33d2c; }
+    @keyframes arrive { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 720px) {
+      .topbar { height: 58px; padding: 0 6vw; }
+      main { margin-top: 36px; width: 88vw; }
+      .intro p { margin-bottom: 25px; }
+      .workspace { grid-template-columns: 1fr; gap: 31px; }
+      .form-panel { padding: 20px; }
+      .side { padding: 0; }
+      .settings { gap: 12px; }
+      .url-row { flex-wrap: wrap; }
+      .inspect { width: 100%; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><span class="brand-mark" aria-hidden="true"></span> FRAME / EXTRACT</div>
+    <span class="local-tag">Local processing</span>
+  </header>
+  <main>
+    <section class="intro">
+      <div class="eyebrow">Media utility / 01</div>
+      <h1>Bring the parts<br>you need.</h1>
+      <p>Save a video-only stream, extract the original audio, or combine both in one file. Choose a resolution up to the highest available source quality.</p>
+    </section>
+    <div class="workspace">
+      <section class="form-panel" aria-label="Download settings">
+        <label class="field-label" for="url">YouTube video URL</label>
+        <div class="url-row">
+          <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="url" required>
+          <button class="inspect" id="inspect" type="button">Inspect video</button>
+        </div>
+        <div class="preview" id="preview" aria-live="polite">
+          <img id="thumbnail" alt="">
+          <div><div class="preview-title" id="title"></div><div class="preview-meta" id="meta"></div></div>
+        </div>
+        <div class="section-rule"></div>
+        <div class="settings">
+          <div>
+            <label class="field-label" for="output">Output</label>
+            <select id="output">
+              <option value="combined">Video + audio</option>
+              <option value="video">Video only</option>
+              <option value="audio">Audio only</option>
+            </select>
+          </div>
+          <div id="quality-field">
+            <label class="field-label" for="quality">Available resolution</label>
+            <select id="quality"><option value="1080">Inspect a video first</option></select>
+          </div>
+          <div id="audio-field" hidden>
+            <label class="field-label" for="audio-format">Audio format</label>
+            <select id="audio-format">
+              <option value="original">Original stream</option>
+              <option value="mp3">MP3 · lossy conversion</option>
+              <option value="m4a">M4A</option>
+              <option value="flac">FLAC · converted</option>
+              <option value="wav">WAV · uncompressed container</option>
+            </select>
+          </div>
+        </div>
+        <div class="quality-meta" id="quality-meta" aria-live="polite"></div>
+        <button class="download" id="download" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 17v3h14v-3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Start download
+        </button>
+        <p class="notice">Use this only for videos you own or have permission to download. Respect creators’ rights and YouTube’s terms. Downloads are saved locally on this device.</p>
+        <div class="status" id="status" role="status" aria-live="polite">
+          <div class="status-line"><span id="status-label">Preparing…</span><span id="percent"></span></div>
+          <div class="progress"><span id="bar"></span></div>
+          <div class="status-detail" id="detail"></div>
+          <a id="file-link" hidden>Save file</a>
+        </div>
+      </section>
+      <aside class="side">
+        <div class="side-title">Choose your output</div>
+        <div class="format"><div class="format-icon">A/V</div><div><strong>Video + audio</strong><span>One MP4 file, with the best available picture and sound.</span></div></div>
+        <div class="format"><div class="format-icon">V</div><div><strong>Video only</strong><span>Highest available video stream, without an audio track.</span></div></div>
+        <div class="format"><div class="format-icon">A</div><div><strong>Audio only</strong><span>Best available audio, kept in its original format.</span></div></div>
+      </aside>
+    </div>
+  </main>
+  <script>
+    const urlInput = document.querySelector('#url');
+    const inspectButton = document.querySelector('#inspect');
+    const downloadButton = document.querySelector('#download');
+    const outputSelect = document.querySelector('#output');
+    const statusBox = document.querySelector('#status');
+    let inspectedUrl = '';
+    let activeJob = false;
+
+    function showError(message) {
+      statusBox.classList.add('visible');
+      document.querySelector('#status-label').textContent = 'Could not continue';
+      document.querySelector('#status-label').classList.add('error');
+      document.querySelector('#percent').textContent = '';
+      document.querySelector('#bar').style.width = '0';
+      document.querySelector('#detail').textContent = message;
+      document.querySelector('#file-link').hidden = true;
+    }
+
+    async function inspectVideo() {
+      const url = urlInput.value.trim();
+      if (!url) { urlInput.focus(); return; }
+      inspectButton.disabled = true;
+      inspectButton.textContent = 'Checking…';
+      try {
+        const response = await fetch('/api/info', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url }) });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to inspect this URL.');
+        inspectedUrl = url;
+        document.querySelector('#preview').classList.add('visible');
+        document.querySelector('#thumbnail').src = data.thumbnail || '';
+        document.querySelector('#title').textContent = data.title;
+        const duration = data.duration ? `${Math.floor(data.duration / 60)}:${String(data.duration % 60).padStart(2, '0')}` : 'Duration unavailable';
+        document.querySelector('#meta').textContent = [duration, data.channel].filter(Boolean).join('  ·  ');
+        const quality = document.querySelector('#quality');
+        window.availableFormats = data.formats;
+        quality.replaceChildren();
+        for (const format of data.formats) {
+          const option = document.createElement('option');
+          option.value = format.height;
+          option.textContent = `${format.height}p${format.fps ? ` · ${format.fps} fps` : ''} · ${format.ext || 'video'}`;
+          quality.append(option);
+        }
+        if (!data.formats.length) {
+          const option = document.createElement('option');
+          option.value = '1080';
+          option.textContent = 'Use best available';
+          quality.append(option);
+        }
+        quality.dispatchEvent(new Event('change'));
+        document.querySelector('#quality-meta').textContent = data.formats[0]
+          ? [data.formats[0].vcodec, data.formats[0].tbr ? `${Math.round(data.formats[0].tbr)} kb/s` : '', data.formats[0].filesize ? `${(data.formats[0].filesize / 1048576).toFixed(0)} MB approx.` : ''].filter(Boolean).join('  ·  ')
+          : 'Format details unavailable';
+        statusBox.classList.remove('visible');
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        inspectButton.disabled = false;
+        inspectButton.textContent = 'Inspect video';
+      }
+    }
+
+    async function startDownload() {
+      if (activeJob) return;
+      if (inspectedUrl !== urlInput.value.trim()) {
+        await inspectVideo();
+        if (inspectedUrl !== urlInput.value.trim()) return;
+      }
+      activeJob = true;
+      downloadButton.disabled = true;
+      document.querySelector('#status-label').classList.remove('error');
+      document.querySelector('#file-link').hidden = true;
+      statusBox.classList.add('visible');
+      document.querySelector('#status-label').textContent = 'Starting download';
+      document.querySelector('#detail').textContent = 'Preparing the selected stream…';
+      try {
+        const response = await fetch('/api/download', {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: urlInput.value.trim(), output: outputSelect.value, quality: document.querySelector('#quality').value, audio_format: document.querySelector('#audio-format').value })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to start download.');
+        await pollJob(data.job_id);
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        activeJob = false;
+        downloadButton.disabled = false;
+      }
+    }
+
+    async function pollJob(jobId) {
+      while (true) {
+        const response = await fetch(`/api/jobs/${jobId}`);
+        const job = await response.json();
+        if (!response.ok) throw new Error(job.error || 'Download status unavailable.');
+        const labels = { queued: 'Queued', downloading: 'Downloading', processing: 'Finishing file', complete: 'Ready to save', error: 'Download failed' };
+        document.querySelector('#status-label').textContent = labels[job.status] || 'Working';
+        document.querySelector('#percent').textContent = job.percent == null ? '' : `${job.percent}%`;
+        document.querySelector('#bar').style.width = `${job.percent || 0}%`;
+        document.querySelector('#detail').textContent = job.status === 'error' ? job.error : [job.speed, job.eta ? `ETA ${job.eta}` : ''].filter(Boolean).join('  ·  ') || 'Your file is being prepared locally.';
+        if (job.status === 'error') throw new Error(job.error);
+        if (job.status === 'complete') {
+          const link = document.querySelector('#file-link');
+          link.href = job.download_url;
+          link.download = job.filename;
+          link.hidden = false;
+          return;
+        }
+        await new Promise(resolve => setTimeout(resolve, 900));
+      }
+    }
+
+    inspectButton.addEventListener('click', inspectVideo);
+    downloadButton.addEventListener('click', startDownload);
+    urlInput.addEventListener('keydown', event => { if (event.key === 'Enter') inspectVideo(); });
+    outputSelect.addEventListener('change', () => {
+      const audioOnly = outputSelect.value === 'audio';
+      document.querySelector('#quality-field').hidden = audioOnly;
+      document.querySelector('#audio-field').hidden = !audioOnly;
+    });
+    document.querySelector('#quality').addEventListener('change', event => {
+      const format = window.availableFormats?.find(item => String(item.height) === event.target.value);
+      if (!format) return;
+      document.querySelector('#quality-meta').textContent = [format.vcodec, format.fps ? `${format.fps} fps` : '', format.tbr ? `${Math.round(format.tbr)} kb/s` : '', format.filesize ? `${(format.filesize / 1048576).toFixed(0)} MB approx.` : ''].filter(Boolean).join('  ·  ');
+    });
+  </script>
+</body>
+</html>
