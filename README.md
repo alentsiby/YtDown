@@ -12,7 +12,7 @@ A small Flask application for inspecting supported YouTube video formats and sav
 
 ## Limitations and source support
 
-The app uses yt-dlp to inspect and retrieve public URLs it supports. It is not an official YouTube download integration, and support can change as the source changes. YouTube's official API is not a general-purpose video download API. Do not assume every URL works, and follow the source platform's terms and applicable law. Metadata inspection alone does not grant permission to download.
+The app uses yt-dlp to inspect and retrieve public URLs it supports. It is not an official YouTube download integration, and support can change as the source changes. YouTube's official API is not a general-purpose video download API. Cloud hosts such as Render may be blocked by YouTube's automated checks even when the same URL works locally; the app reports this and does not attempt to bypass it. Do not assume every URL works, and follow the source platform's terms and applicable law. Metadata inspection alone does not grant permission to download.
 
 The app has no user accounts. It applies in-memory IP rate limits and allows one active job; configure `RATELIMIT_STORAGE_URI` for shared rate-limit storage if running multiple instances. The app trusts one reverse proxy for client IP and scheme headers, as configured for Render. Review this setting for other deployment topologies. Add authentication, monitoring, and durable storage controls before operating it as a public service. In-memory jobs and rate limits are lost on restart. The included Render service uses an ephemeral filesystem; output files can disappear when the service restarts or sleeps.
 

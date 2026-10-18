@@ -70,6 +70,16 @@ def make_ydl_options(**options) -> dict:
     }
 
 
+def media_error_message(error: Exception) -> str:
+    message = str(error).lower()
+    if "not a bot" in message or "confirm you’re not a bot" in message:
+        return (
+            "YouTube blocked requests from this hosting server with an automated check. "
+            "Try the local app or an authorized media source that permits server access."
+        )
+    return "Could not read this video. Check the URL and try again."
+
+
 def cleanup_expired_jobs() -> None:
     global last_cleanup
     now = time.time()
@@ -140,7 +150,7 @@ def video_info():
         )
     except Exception as exc:
         app.logger.warning("Video inspection failed: %s", exc)
-        return jsonify(error="Could not read this video. Check the URL and try again."), 422
+        return jsonify(error=media_error_message(exc)), 422
 
 
 def run_download(job_id: str, url: str, output: str, quality: str, audio_format: str) -> None:
@@ -188,7 +198,7 @@ def run_download(job_id: str, url: str, output: str, quality: str, audio_format:
         update("complete", percent=100, filename=Path(filename).name)
     except Exception as exc:
         app.logger.warning("Download job %s failed: %s", job_id, exc)
-        update("error", error="Download failed. The source may be unavailable or incompatible with this format.")
+        update("error", error=media_error_message(exc))
 
 
 @app.post("/api/download")
@@ -246,4 +256,4 @@ def rate_limit_error(_error):
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "5000")), debug=False)
+    app.run(host="127.0.0.1", port=int(os.environ.get("PORT", "5000")), debug=False)

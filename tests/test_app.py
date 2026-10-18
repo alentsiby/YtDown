@@ -31,6 +31,13 @@ def test_info_rejects_non_youtube_host():
     assert response.status_code == 400
 
 
+def test_host_bot_check_has_actionable_error_message():
+    assert "local app" in app.media_error_message(
+        RuntimeError("Sign in to confirm you’re not a bot")
+    )
+    assert "local app" not in app.media_error_message(RuntimeError("Video unavailable"))
+
+
 def test_info_reports_available_formats(monkeypatch):
     source_info = {
         "id": "sample",
