@@ -53,9 +53,16 @@
     .workspace { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(265px, .8fr); gap: 32px; align-items: start; }
     .form-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 26px; box-shadow: 0 12px 34px rgba(23, 34, 29, .045); animation: arrive .55s .08s ease-out both; }
     .field-label { display: block; font-size: 12px; font-weight: 700; margin-bottom: 9px; }
+    .source-tabs { display: flex; gap: 3px; padding: 3px; margin-bottom: 20px; border-radius: 6px; background: #edf0eb; }
+    .source-tabs button { flex: 1; height: 34px; border: 0; border-radius: 4px; color: var(--muted); background: transparent; }
+    .source-tabs button[aria-selected="true"] { color: var(--ink); background: white; box-shadow: 0 1px 3px rgba(23, 34, 29, .1); }
     .url-row { display: flex; gap: 8px; }
     input, select { font: 13px var(--sans); color: var(--ink); }
     input[type=url] { width: 100%; min-width: 0; height: 46px; border: 1px solid var(--line); border-radius: 5px; padding: 0 13px; background: #fbfcfa; outline: none; }
+    input[type=file] { width: 100%; min-width: 0; font-size: 12px; color: var(--muted); }
+    .upload-row { display: grid; gap: 14px; }
+    .consent { display: flex; align-items: flex-start; gap: 9px; font-size: 11px; line-height: 1.5; color: var(--muted); }
+    .consent input { margin: 2px 0 0; accent-color: var(--green); }
     input[type=url]:focus, select:focus { border-color: var(--green); box-shadow: 0 0 0 3px rgba(23, 107, 74, .1); }
     button { font: 700 12px var(--sans); cursor: pointer; }
     .inspect { flex: 0 0 auto; height: 46px; padding: 0 16px; color: white; background: var(--green); border: 0; border-radius: 5px; }
@@ -115,10 +122,29 @@
     </section>
     <div class="workspace">
       <section class="form-panel" aria-label="Download settings">
-        <label class="field-label" for="url">YouTube video URL</label>
-        <div class="url-row">
-          <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="url" required>
-          <button class="inspect" id="inspect" type="button">Inspect video</button>
+        <div class="source-tabs" role="tablist" aria-label="Media source">
+          <button id="youtube-tab" type="button" role="tab" aria-selected="true" aria-controls="youtube-source">YouTube link</button>
+          <button id="upload-tab" type="button" role="tab" aria-selected="false" aria-controls="upload-source">Media upload</button>
+        </div>
+        <div id="youtube-source" role="tabpanel" aria-labelledby="youtube-tab">
+          <label class="field-label" for="url">YouTube video URL</label>
+          <div class="url-row">
+            <input id="url" type="url" placeholder="https://www.youtube.com/watch?v=..." autocomplete="url" required>
+            <button class="inspect" id="inspect" type="button">Inspect video</button>
+          </div>
+        </div>
+        <div id="upload-source" role="tabpanel" aria-labelledby="upload-tab" hidden>
+          <div class="upload-row">
+            <div>
+              <label class="field-label" for="media-file">Audio or video file (max 512 MiB)</label>
+              <input id="media-file" type="file" accept="audio/*,video/*,.mkv,.flac,.opus,.aiff">
+            </div>
+            <label class="consent" for="authorized-media">
+              <input id="authorized-media" type="checkbox">
+              I own this media or have permission to process it.
+            </label>
+            <button class="inspect" id="inspect-upload" type="button">Inspect media</button>
+          </div>
         </div>
         <div class="preview" id="preview" aria-live="polite">
           <img id="thumbnail" alt="">
@@ -177,6 +203,7 @@
     const outputSelect = document.querySelector('#output');
     const statusBox = document.querySelector('#status');
     let inspectedUrl = '';
+    let inspectedUploadId = '';
     let activeJob = false;
 
     function showError(message) {
@@ -232,8 +259,49 @@
       }
     }
 
+    async function inspectUpload() {
+      const file = document.querySelector('#media-file').files[0];
+      if (!file) { document.querySelector('#media-file').focus(); return false; }
+      if (!document.querySelector('#authorized-media').checked) {
+        showError('Confirm that you own this media or have permission to process it.');
+        return false;
+      }
+      const button = document.querySelector('#inspect-upload');
+      button.disabled = true;
+      button.textContent = 'Checking…';
+      try {
+        const body = new FormData();
+        body.append('file', file);
+        body.append('authorized', 'true');
+        const response = await fetch('/api/uploads/inspect', { method: 'POST', body });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to inspect this upload.');
+        inspectedUploadId = data.upload_id;
+        document.querySelector('#preview').classList.add('visible');
+        document.querySelector('#thumbnail').removeAttribute('src');
+        document.querySelector('#title').textContent = data.filename;
+        const duration = data.duration ? `${Math.floor(data.duration / 60)}:${String(data.duration % 60).padStart(2, '0')}` : 'Duration unavailable';
+        const streams = data.streams.map(stream => `${stream.codec_type}: ${stream.codec_name || 'unknown codec'}`).join(' · ');
+        document.querySelector('#meta').textContent = [duration, data.format, streams].filter(Boolean).join('  ·  ');
+        document.querySelector('#quality-meta').textContent = 'Source media will be stream-copied when compatible.';
+        statusBox.classList.remove('visible');
+        return true;
+      } catch (error) {
+        inspectedUploadId = '';
+        showError(error.message);
+        return false;
+      } finally {
+        button.disabled = false;
+        button.textContent = 'Inspect media';
+      }
+    }
+
     async function startDownload() {
       if (activeJob) return;
+      if (!document.querySelector('#upload-source').hidden) {
+        await startUploadProcessing();
+        return;
+      }
       if (inspectedUrl !== urlInput.value.trim()) {
         await inspectVideo();
         if (inspectedUrl !== urlInput.value.trim()) return;
@@ -252,6 +320,39 @@
         });
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || 'Unable to start download.');
+        await pollJob(data.job_id);
+      } catch (error) {
+        showError(error.message);
+      } finally {
+        activeJob = false;
+        downloadButton.disabled = false;
+      }
+    }
+
+    async function startUploadProcessing() {
+      const file = document.querySelector('#media-file').files[0];
+      if (!file) { document.querySelector('#media-file').focus(); return; }
+      if (!document.querySelector('#authorized-media').checked) {
+        showError('Confirm that you own this media or have permission to process it.');
+        return;
+      }
+      if (!inspectedUploadId && !await inspectUpload()) return;
+      activeJob = true;
+      downloadButton.disabled = true;
+      document.querySelector('#status-label').classList.remove('error');
+      document.querySelector('#file-link').hidden = true;
+      statusBox.classList.add('visible');
+      document.querySelector('#status-label').textContent = 'Starting processing';
+      document.querySelector('#detail').textContent = 'Preparing the selected output…';
+      try {
+        const response = await fetch(`/api/uploads/${inspectedUploadId}/process`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ operation: outputSelect.value, audio_format: document.querySelector('#audio-format').value })
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || 'Unable to process this upload.');
+        inspectedUploadId = '';
         await pollJob(data.job_id);
       } catch (error) {
         showError(error.message);
@@ -284,8 +385,28 @@
     }
 
     inspectButton.addEventListener('click', inspectVideo);
+    document.querySelector('#inspect-upload').addEventListener('click', inspectUpload);
     downloadButton.addEventListener('click', startDownload);
     urlInput.addEventListener('keydown', event => { if (event.key === 'Enter') inspectVideo(); });
+    document.querySelector('#media-file').addEventListener('change', () => {
+      if (inspectedUploadId) fetch(`/api/uploads/${inspectedUploadId}`, { method: 'DELETE' });
+      inspectedUploadId = '';
+      document.querySelector('#preview').classList.remove('visible');
+    });
+    document.querySelector('#youtube-tab').addEventListener('click', () => {
+      if (inspectedUploadId) fetch(`/api/uploads/${inspectedUploadId}`, { method: 'DELETE' });
+      inspectedUploadId = '';
+      document.querySelector('#youtube-tab').setAttribute('aria-selected', 'true');
+      document.querySelector('#upload-tab').setAttribute('aria-selected', 'false');
+      document.querySelector('#youtube-source').hidden = false;
+      document.querySelector('#upload-source').hidden = true;
+    });
+    document.querySelector('#upload-tab').addEventListener('click', () => {
+      document.querySelector('#youtube-tab').setAttribute('aria-selected', 'false');
+      document.querySelector('#upload-tab').setAttribute('aria-selected', 'true');
+      document.querySelector('#youtube-source').hidden = true;
+      document.querySelector('#upload-source').hidden = false;
+    });
     outputSelect.addEventListener('change', () => {
       const audioOnly = outputSelect.value === 'audio';
       document.querySelector('#quality-field').hidden = audioOnly;
