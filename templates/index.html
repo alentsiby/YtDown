@@ -112,7 +112,7 @@
 <body>
   <header class="topbar">
     <div class="brand"><span class="brand-mark" aria-hidden="true"></span> FRAME / EXTRACT</div>
-    <span class="local-tag">Local processing</span>
+    <span class="local-tag">Temporary processing</span>
   </header>
   <main>
     <section class="intro">
@@ -400,16 +400,19 @@
       document.querySelector('#upload-tab').setAttribute('aria-selected', 'false');
       document.querySelector('#youtube-source').hidden = false;
       document.querySelector('#upload-source').hidden = true;
+      document.querySelector('#quality-field').hidden = outputSelect.value === 'audio';
     });
     document.querySelector('#upload-tab').addEventListener('click', () => {
       document.querySelector('#youtube-tab').setAttribute('aria-selected', 'false');
       document.querySelector('#upload-tab').setAttribute('aria-selected', 'true');
       document.querySelector('#youtube-source').hidden = true;
       document.querySelector('#upload-source').hidden = false;
+      document.querySelector('#quality-field').hidden = true;
     });
     outputSelect.addEventListener('change', () => {
       const audioOnly = outputSelect.value === 'audio';
-      document.querySelector('#quality-field').hidden = audioOnly;
+      const uploadMode = document.querySelector('#upload-source').hidden === false;
+      document.querySelector('#quality-field').hidden = audioOnly || uploadMode;
       document.querySelector('#audio-field').hidden = !audioOnly;
     });
     document.querySelector('#quality').addEventListener('change', event => {
