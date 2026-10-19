@@ -21,6 +21,7 @@ DOWNLOADS = ROOT / "downloads"
 DOWNLOADS.mkdir(exist_ok=True)
 
 app = Flask(__name__)
+app.logger.info("Using yt-dlp %s", yt_dlp.version.__version__)
 app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
 executor = ThreadPoolExecutor(max_workers=1)
 limiter = Limiter(

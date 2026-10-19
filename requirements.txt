@@ -1,4 +1,4 @@
 Flask>=3.0,<4
-yt-dlp>=2025.1.15
+yt-dlp>=2026.8.19
 gunicorn>=23,<24
 Flask-Limiter>=3,<5
