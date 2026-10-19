@@ -101,7 +101,11 @@ def media_error_message(error: Exception) -> str:
         return "The source took too long to respond. Try again later or use an authorized media file."
     if "sign in" in message or "private video" in message or "age-restricted" in message:
         return "This source requires access that the app cannot provide. Use a public, authorized source."
-    return "Could not read this video. Check the URL and try again."
+    return (
+        "The server could not retrieve this video's information. The video may be unavailable "
+        "to the server, or the source may block requests from this host. Try again later or "
+        "run the app locally."
+    )
 
 
 def cleanup_expired_jobs() -> None:

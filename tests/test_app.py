@@ -49,6 +49,13 @@ def test_host_bot_check_has_actionable_error_message():
     assert "local app" not in app.media_error_message(RuntimeError("Video unavailable"))
 
 
+def test_unknown_video_error_does_not_blame_url_format():
+    message = app.media_error_message(RuntimeError("Video unavailable"))
+    assert "server could not retrieve" in message
+    assert "source may block requests" in message
+    assert "Check the URL" not in message
+
+
 def test_youtube_info_returns_actionable_access_denial(monkeypatch):
     class DeniedYoutubeDL:
         def __init__(self, options):
