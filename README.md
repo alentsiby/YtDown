@@ -70,6 +70,29 @@ python app.py
 
 Open http://127.0.0.1:5000 to inspect a supported YouTube URL.
 
+## Run on Android
+
+This runs the app directly on an Android phone, so requests come from the phone's network instead of a cloud host. YouTube access can still vary by network, and this does not bypass YouTube access checks.
+
+1. Install Termux from [F-Droid](https://f-droid.org/packages/com.termux/) or the [official GitHub releases](https://github.com/termux/termux-app/releases). Do not use the outdated Play Store build.
+2. Open Termux and run:
+
+   ```sh
+   pkg update
+   pkg install git python ffmpeg
+   git clone https://github.com/alentsiby/YtDown.git
+   cd YtDown
+   python -m venv .venv
+   . .venv/bin/activate
+   python -m pip install -r requirements.txt
+   python app.py
+   ```
+
+3. Keep Termux open and visit http://127.0.0.1:5000 in the browser on the same phone.
+4. Use **Save file** in the browser to save completed output. Downloads are stored inside Termux's app data; uninstalling Termux removes them.
+
+The server listens only on the phone's loopback interface by default; do not change it to listen publicly for this setup. Android may pause background processes, so keep Termux open while inspecting or downloading.
+
 ## Tests
 
 ```sh
