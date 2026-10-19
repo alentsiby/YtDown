@@ -93,6 +93,8 @@ This runs the app directly on an Android phone, so requests come from the phone'
 
 The server listens only on the phone's loopback interface by default; do not change it to listen publicly for this setup. Android may pause background processes, so keep Termux open while inspecting or downloading.
 
+For access from your phone when your computer cannot stay on, see the [private VPS setup guide](./VPS_SETUP.md).
+
 ## Tests
 
 ```sh
